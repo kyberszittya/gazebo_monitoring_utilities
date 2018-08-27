@@ -1,0 +1,15 @@
+README.md
+src/gazebo_ros_distance_plugin/CMakeLists.txt
+src/gazebo_ros_distance_plugin/package.xml
+src/gazebo_ros_distance_plugin/src/plugin_collision.hpp
+src/gazebo_ros_distance_plugin/src/plugin_model.cpp
+src/gazebo_ros_distance_plugin/src/plugin_model_ros.cpp
+src/gazebo_ros_distance_plugin/test/test_basic.cpp
+src/gazebo_ros_distance_plugin/test/test_basic_narrowphase.cpp
+src/test_maps/distance_objects.sdf
+src/test_maps/distance_objects_2objects.sdf
+src/test_maps/test_distance_objects_primitives
+src/test_maps/test_objects.sdf
+src/test_maps/test_objects_2.sdf
+src/test_maps/test_objects_3.sdf
+src/test_maps/test_objects_4.sdf

@@ -130,8 +130,16 @@ include_directories(
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
    src/plugin_model.cpp
+   src/plugin_common.cpp
+   src/distance_calculation.cpp
 )
-target_link_libraries(${PROJECT_NAME}  ${catkin_LIBRARIES} fcl ccd)
+add_library(${PROJECT_NAME}_ros
+   src/plugin_model_ros.cpp
+   src/plugin_common.cpp
+   src/distance_calculation.cpp
+)
+target_link_libraries(${PROJECT_NAME}  ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} fcl ccd)
+target_link_libraries(${PROJECT_NAME}_ros   ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} fcl ccd)
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
@@ -197,12 +205,12 @@ target_link_libraries(${PROJECT_NAME}  ${catkin_LIBRARIES} fcl ccd)
 #############
 
 ## Add gtest based cpp test target and link libraries
-catkin_add_gtest(basic-collision-test test/test_basic.cpp)
-catkin_add_gtest(basic-collision-test-narrowphase test/test_basic_narrowphase.cpp)
+catkin_add_gtest(basic-collision-test test/test_basic.cpp src/distance_calculation.cpp)
+catkin_add_gtest(basic-collision-test-narrowphase test/test_basic_narrowphase.cpp src/distance_calculation.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
-target_link_libraries(basic-collision-test ${catkin_LIBRARIES} fcl ccd)
-target_link_libraries(basic-collision-test-narrowphase ${catkin_LIBRARIES} fcl ccd)
+target_link_libraries(basic-collision-test ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} fcl ccd)
+target_link_libraries(basic-collision-test-narrowphase ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} fcl ccd)
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)

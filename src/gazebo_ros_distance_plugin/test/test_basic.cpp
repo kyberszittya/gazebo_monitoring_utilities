@@ -187,6 +187,7 @@ TEST(BasicTestDistance, TestBasicUpdate)
     // Before usage, let's setup
     calc_plugin.setupCollision();
     // Update for a short period
+    //for (int i = 0; i < 1000; i++)
     for (int i = 0; i < 1000; i++)
     {
         const Eigen::Vector3d tr_u(1.0+i*UPDATE_DX, 1.0, 0.0);

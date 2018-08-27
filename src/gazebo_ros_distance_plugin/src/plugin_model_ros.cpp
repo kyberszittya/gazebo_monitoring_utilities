@@ -2,9 +2,5 @@
 
 namespace gazebo
 {
-    void DistanceGazeboRosPlugin::DistanceUpdatePublish(double distance)
-    {
-
-    }
-    GZ_REGISTER_WORLD_PLUGIN(DistanceGazeboRosPluginRos)
+    GZ_REGISTER_WORLD_PLUGIN(DistanceGazeboPluginRos)
 }
