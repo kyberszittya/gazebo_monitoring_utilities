@@ -1,11 +1,8 @@
-#include "plugin_collision.hpp"
+#include <gazebo_ros_distance_plugin/plugin_collision.hpp>
 
 namespace gazebo
 {
-    void DistanceGazeboPluginRos::Load(physics::WorldPtr _world, sdf::ElementPtr _sdf)
-    {
-        InitPlugin(_world, _sdf);
-    }
+    
 
 
     void DistanceGazeboPlugin::Load(physics::WorldPtr _world, sdf::ElementPtr _sdf)
@@ -29,7 +26,7 @@ namespace gazebo
         }
         else
         {
-            update_rate = 1.0/5.0;
+            update_rate = 1.0/2.0;
             std::cout << "Using default update rate: " << update_rate << std::endl;
         }
         // Get target objects
@@ -39,6 +36,14 @@ namespace gazebo
             std::string name_target = it->Get<std::string>();
             std::cout << "Target: " << name_target << std::endl;
             distance_calculation->addTargetObject(name_target);
+        }
+        // Get ignored objects
+        for (auto it = _sdf->GetElement("ignored_object");
+            it != nullptr; it = it->GetNextElement("ignored_object"))
+        {
+            std::string name_ignored = it->Get<std::string>();
+            std::cout << "Ignored object: " << name_ignored << std::endl;
+            distance_calculation->addIgnoredObject(name_ignored);
         }
         for(unsigned int i = 0; i < world->ModelCount(); i++)
         {
@@ -50,10 +55,19 @@ namespace gazebo
             {
                 // Add bounding box: for monitoring this is sufficient enough
                 auto size = model->CollisionBoundingBox().Size();
-                auto center = model->CollisionBoundingBox().Center();
+                auto center = model->CollisionBoundingBox().Center();            
+                auto rot = model->WorldPose().Rot();                
+                Eigen::Quaterniond q(rot.W(), rot.X(), rot.Y(), rot.Z());
                 Eigen::Vector3d s(size.X(), size.Y(), size.Z());
+                if ((rot.Yaw() > M_PI_2 && rot.Yaw() < M_PI) || (rot.Yaw() > M_PI && rot.Yaw() < 3.0*M_PI_2))
+                {
+                    s[0] = size.Y();
+                    s[1] = size.X();
+                }
+                
                 Eigen::Vector3d c(center.X(), center.Y(), center.Z());
-                Eigen::Quaterniond q(1,0,0,0);
+                
+                
                 if (model->IsStatic())
                 {
                     std::cout << "Static object: " << name << std::endl;
@@ -74,7 +88,7 @@ namespace gazebo
                 }
                 model_names.push_back(name);
                 std::cout << "Bounding box center: " << center << std::endl;
-                std::cout << "Bounding box size: " << size << std::endl;
+                std::cout << "Bounding box size: " << s << std::endl;
             }
 
         }
@@ -92,7 +106,7 @@ namespace gazebo
             auto t = world->SimTime();
             if ((t - t_last).Double() > update_rate)
             {
-                DistanceUpdatePublish(distance_calculation->getMinTargetDistanceNarrowphase());
+                DistanceUpdatePublish(distance_calculation->getMinTargetDistanceNarrowphase());                
                 t_last = world->SimTime();
             }
         }
@@ -101,6 +115,7 @@ namespace gazebo
 
     void DistanceGazeboPlugin::Update()
     {
+        /*
         auto t = world->SimTime();
         if ((t - last_update_time).Double() > update_rate)
         {
@@ -108,14 +123,27 @@ namespace gazebo
             for(const auto &v: model_names)
             {
                 auto obj = world->ModelByName(v);
+                auto b_box = obj->CollisionBoundingBox();
+                auto b_pos = b_box.Center();
+                auto b_size = b_box.Size();
                 auto pose = obj->WorldPose();
                 auto pos = pose.Pos();
                 auto q = pose.Rot();
-                Eigen::Vector3d t(pos.X(), pos.Y(), pos.Z());
-                Eigen::Quaterniond q0(q.W(), q.X(), q.Y(), q.Z());
-                distance_calculation->updateObjectPose(v, t, q0);
+                Eigen::Vector3d t(b_pos.X(), b_pos.Y(), b_pos.Z());
+                //Eigen::Quaterniond q0(q.W(), q.X(), q.Y(), q.Z());
+                Eigen::Vector3d s(b_size.X(), b_size.Y(), b_size.Z());
+                //distance_calculation->updateObjectPose(v, t, q0);
+                //distance_calculation->updateBoundingBox(v, t, s);
             }
 
         }
+        */
     }
+
+    void DistanceGazeboPluginRos::Load(physics::WorldPtr _world, sdf::ElementPtr _sdf)
+    {
+        InitPlugin(_world, _sdf);
+    }
+
+    
 }

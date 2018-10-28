@@ -1,4 +1,4 @@
-#include "plugin_collision.hpp"
+#include <gazebo_ros_distance_plugin/plugin_collision.hpp>
 
 namespace gazebo
 {

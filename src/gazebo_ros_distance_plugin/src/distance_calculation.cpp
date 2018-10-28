@@ -1,4 +1,4 @@
-#include "plugin_collision.hpp"
+#include <gazebo_ros_distance_plugin/plugin_collision.hpp>
 
 namespace gazebo
 {
@@ -73,6 +73,8 @@ namespace gazebo
         objects_collision_mesh.push_back(objd);
         objects_collision_center.push_back(center);
     }
+
+    
 
     // @brief: is object ignored based on name
     bool DistanceCalculation::isIgnoredObject(std::string name)
@@ -239,19 +241,33 @@ namespace gazebo
         objects_collision_mesh[i]->setTransform(r, t + objects_collision_center[i]);
     }
 
+    void DistanceCalculation::updateBoundingBox(std::string name, Eigen::Vector3d t, Eigen::Vector3d r)
+    {
+        unsigned int obj_ind = objects[name];
+        fcl::Boxd f;
+        if (isTargetObject(obj_ind))
+        {
+
+        }
+    }
+
     // @brief: Get minimal narrowphase distance
     double DistanceCalculation::getMinTargetDistanceNarrowphase()
     {
         DistanceDataD distance_data;
         target_object_set->distance(monitored_object_set.get(), &distance_data, defaultDistanceFunction);
+        
         auto res = distance_data.result;
         return res.min_distance < 0.0 ? 0.0: res.min_distance;
     }
 
     // Get minimal distance between targets and monitored objects
-    double DistanceCalculation::getMinTargetDistance()
+    gazebo::DistanceMeas DistanceCalculation::getMinTargetDistance()
     {
         fcl::DistanceResultd dist_result;
+        gazebo::DistanceMeas res_m;
+        res_m.distance = 0.0;
+        res_m.name = "";
 
         double min_dist = std::numeric_limits<double>::max();
         for (auto it_target = target_map.begin(); it_target != target_map.end(); ++it_target)
@@ -261,20 +277,33 @@ namespace gazebo
                 double res = fcl::distance(it_target->second.get(),
                                         it_monitored->second.get(),
                         dist_request, dist_result);
-                min_dist = min_dist > res ? res : min_dist;
+                if (min_dist > res)
+                {
+                    min_dist = res;
+                    res_m.distance = min_dist;
+                    res_m.name = it_monitored->first;
+                }
+                
                 if (min_dist < 0.0)
                 {
-                    return 0.0;
+                    return res_m;
                 }
 
             }
 
         }
-        return min_dist;
+        return res_m;
     }
+
+    
 
     void DistanceCalculation::addTargetObject(std::string name)
     {
         target_objects_name.insert(name);
+    }
+
+    void DistanceCalculation::addIgnoredObject(std::string name)
+    {
+        ignored_objects.insert(name);
     }
 }

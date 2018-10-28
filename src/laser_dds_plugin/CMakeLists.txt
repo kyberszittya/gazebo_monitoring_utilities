@@ -1,18 +1,25 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(gazebo_ros_distance_plugin)
+project(laser_dds_plugin)
 
-## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
+set(NDDSHOME /opt/rti_connext_dds-5.3.1)
+set(TARGET_ARCH x64Linux3gcc5.4.0)
 
+add_compile_options(-DRTI_LINUX)
+add_compile_options(-DRTI_UNIX)
+add_compile_options(-DRTI_64BIT)
+add_compile_options(-DRTI_STATIC)
+add_compile_options(-DNDDS_STANDALONE_TYPE)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   gazebo_msgs
   geometry_msgs
+  sensor_msgs
   roscpp
   rospy
   std_msgs
+  gazebo_ros_distance_plugin
 )
 
 ## System dependencies are found with CMake's conventions
@@ -20,6 +27,10 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(Eigen3)
 find_package(fcl)
 find_package(Gazebo REQUIRED)
+
+list(INSERT CMAKE_MODULE_PATH 0 "/opt/rti_connext_dds-5.3.1/resource/cmake")
+#find_package(RTIConnextDDS REQUIRED COMPONENTS core)
+
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
@@ -35,10 +46,10 @@ find_package(Gazebo REQUIRED)
 ##   your messages/services/actions (e.g. std_msgs, actionlib_msgs, ...).
 ## * In the file package.xml:
 ##   * add a build_depend tag for "message_generation"
-##   * add a build_depend and a run_depend tag for each package in MSG_DEP_SET
+##   * add a build_depend and a exec_depend tag for each package in MSG_DEP_SET
 ##   * If MSG_DEP_SET isn't empty the following dependency has been pulled in
 ##     but can be declared for certainty nonetheless:
-##     * add a run_depend tag for "message_runtime"
+##     * add a exec_depend tag for "message_runtime"
 ## * In this file (CMakeLists.txt):
 ##   * add "message_generation" and every package in MSG_DEP_SET to
 ##     find_package(catkin REQUIRED COMPONENTS ...)
@@ -73,7 +84,7 @@ find_package(Gazebo REQUIRED)
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   gazebo_msgs#   geometry_msgs#   std_msgs
+#   std_msgs  # Or other packages containing msgs
 # )
 
 ################################################
@@ -83,7 +94,7 @@ find_package(Gazebo REQUIRED)
 ## To declare and build dynamic reconfigure parameters within this
 ## package, follow these steps:
 ## * In the file package.xml:
-##   * add a build_depend and a run_depend tag for "dynamic_reconfigure"
+##   * add a build_depend and a exec_depend tag for "dynamic_reconfigure"
 ## * In this file (CMakeLists.txt):
 ##   * add "dynamic_reconfigure" to
 ##     find_package(catkin REQUIRED COMPONENTS ...)
@@ -107,17 +118,14 @@ find_package(Gazebo REQUIRED)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES gazebo_ros_distance_plugin
-#  CATKIN_DEPENDS gazebo_msgs geometry_msgs roscpp rospy std_msgs
+#  LIBRARIES gazebo_rti_state_plugin
+#  CATKIN_DEPENDS roscpp
 #  DEPENDS system_lib
 )
 
 ###########
 ## Build ##
 ###########
-
-link_directories(${GAZEBO_LIBRARY_DIRS})
-list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
@@ -127,20 +135,13 @@ include_directories(
   ${GAZEBO_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
   include/
+  src/
+  ../gazebo_ros_distance_plugin/include/
+  /opt/rti_connext_dds-5.3.1/include/ndds/hpp/
+  /opt/rti_connext_dds-5.3.1/include/ndds/
+  /opt/rti_connext_dds-5.3.1/include/
 )
-## Declare a C++ library
-add_library(${PROJECT_NAME}
-   src/plugin_model.cpp
-   src/plugin_common.cpp
-   src/distance_calculation.cpp
-)
-add_library(${PROJECT_NAME}_ros
-   src/plugin_model_ros.cpp
-   src/plugin_common.cpp
-   src/distance_calculation.cpp
-)
-target_link_libraries(${PROJECT_NAME}  ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} fcl ccd)
-target_link_libraries(${PROJECT_NAME}_ros   ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} fcl ccd)
+
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
@@ -149,8 +150,26 @@ target_link_libraries(${PROJECT_NAME}_ros   ${catkin_LIBRARIES} ${GAZEBO_LIBRARI
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/gazebo_ros_distance_plugin_node.cpp)
 
+add_executable(laser_min_node 
+  #src/laser_min_filter.cpp
+  #src/gen/GazeboObjectState_publisher.cxx
+  src/laser_min_filter.cpp
+  src/gen/GazeboObjectState.cxx
+  src/gen/GazeboObjectStatePlugin.cxx
+)
+target_link_libraries(laser_min_node 
+   ${catkin_LIBRARIES}
+   ${GAZEBO_LIBRARIES}
+   ${NDDSHOME}/lib/${TARGET_ARCH}/libnddscz.a
+   ${NDDSHOME}/lib/${TARGET_ARCH}//libnddscorez.a
+   ${NDDSHOME}/lib/${TARGET_ARCH}//libnddscpp2z.a
+   dl
+   nsl
+   m
+   pthread
+   rt
+ )
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -162,9 +181,7 @@ target_link_libraries(${PROJECT_NAME}_ros   ${catkin_LIBRARIES} ${GAZEBO_LIBRARI
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(${PROJECT_NAME}_node
-#   ${catkin_LIBRARIES}
-# )
+
 
 #############
 ## Install ##
@@ -206,12 +223,10 @@ target_link_libraries(${PROJECT_NAME}_ros   ${catkin_LIBRARIES} ${GAZEBO_LIBRARI
 #############
 
 ## Add gtest based cpp test target and link libraries
-catkin_add_gtest(basic-collision-test test/test_basic.cpp src/distance_calculation.cpp)
-catkin_add_gtest(basic-collision-test-narrowphase test/test_basic_narrowphase.cpp src/distance_calculation.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_gazebo_rti_state_plugin.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
-target_link_libraries(basic-collision-test ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} fcl ccd)
-target_link_libraries(basic-collision-test-narrowphase ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} fcl ccd)
+
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
