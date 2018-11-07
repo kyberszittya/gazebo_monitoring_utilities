@@ -145,8 +145,8 @@ include_directories(
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
-  #src/plugin_main.cpp
-  src/gen/GazeboObjectState_publisher.cxx
+  src/plugin_main.cpp
+  #src/gen/GazeboObjectState_publisher.cxx
   #src/gen/GazeboObjectStateImplPlugin.cxx
   src/gen/GazeboObjectState.cxx
   src/gen/GazeboObjectStatePlugin.cxx
