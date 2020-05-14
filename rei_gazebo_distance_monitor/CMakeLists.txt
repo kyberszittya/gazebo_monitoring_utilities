@@ -1,36 +1,26 @@
-cmake_minimum_required(VERSION 2.8.3)
-project(gazebo_rti_state_plugin)
+cmake_minimum_required(VERSION 3.0.2)
+project(rei_gazebo_distance_monitor)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
-set(NDDSHOME /opt/rti_connext_dds-5.3.1)
-set(TARGET_ARCH x64Linux3gcc5.4.0)
 
-add_compile_options(-DRTI_LINUX)
-add_compile_options(-DRTI_UNIX)
-add_compile_options(-DRTI_64BIT)
-add_compile_options(-DRTI_STATIC)
-add_compile_options(-DNDDS_STANDALONE_TYPE)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   gazebo_msgs
-  geometry_msgs
+  gazebo_ros
   roscpp
-  rospy
-  std_msgs
-  gazebo_ros_distance_plugin
 )
+
+find_package(gazebo REQUIRED)
+find_package(fcl REQUIRED)
+
+list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-find_package(Eigen3)
-find_package(fcl)
-find_package(Gazebo REQUIRED)
 
-list(INSERT CMAKE_MODULE_PATH 0 "/opt/rti_connext_dds-5.3.1/resource/cmake")
-#find_package(RTIConnextDDS REQUIRED COMPONENTS core)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -85,7 +75,7 @@ list(INSERT CMAKE_MODULE_PATH 0 "/opt/rti_connext_dds-5.3.1/resource/cmake")
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
+#   gazebo_msgs
 # )
 
 ################################################
@@ -119,8 +109,8 @@ list(INSERT CMAKE_MODULE_PATH 0 "/opt/rti_connext_dds-5.3.1/resource/cmake")
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES gazebo_rti_state_plugin
-#  CATKIN_DEPENDS roscpp
+#  LIBRARIES rei_gazebo_distance_monitor
+#  CATKIN_DEPENDS gazebo_msgs gazebo_ros roscpp
 #  DEPENDS system_lib
 )
 
@@ -131,62 +121,19 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
   ${GAZEBO_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
-  include/
-  src/
-  ../gazebo_ros_distance_plugin/include/
-  /opt/rti_connext_dds-5.3.1/include/ndds/hpp/
-  /opt/rti_connext_dds-5.3.1/include/ndds/
-  /opt/rti_connext_dds-5.3.1/include/
 )
+
+link_directories(${GAZEBO_LIBRARY_DIRS})
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
-  src/plugin_main.cpp
-  #src/gen/GazeboObjectState_publisher.cxx
-  #src/gen/GazeboObjectStateImplPlugin.cxx
-  src/gen/GazeboObjectState.cxx
-  src/gen/GazeboObjectStatePlugin.cxx
-  #src/gen/GazeboObjectStateImpl.cxx
+  src/plugin_distance.cpp
 )
-target_link_libraries(${PROJECT_NAME}
-   ${catkin_LIBRARIES}
-   ${GAZEBO_LIBRARIES}
-   ${NDDSHOME}/lib/${TARGET_ARCH}/libnddscz.a
-   ${NDDSHOME}/lib/${TARGET_ARCH}//libnddscorez.a
-   ${NDDSHOME}/lib/${TARGET_ARCH}//libnddscpp2z.a
-   dl
-   nsl
-   m
-   pthread
-   rt
-)
-add_library(${PROJECT_NAME}_distance
-  src/plugin_model_rti.cpp
-  ../gazebo_ros_distance_plugin/src/plugin_common.cpp
-  ../gazebo_ros_distance_plugin/src/distance_calculation.cpp
-  #src/gen/GazeboObjectStateImplPlugin.cxx
-  src/gen/GazeboObjectState.cxx
-  src/gen/GazeboObjectStatePlugin.cxx
-  #src/gen/GazeboObjectStateImpl.cxx
-)
-target_link_libraries(${PROJECT_NAME}_distance
-   ${catkin_LIBRARIES}
-   ${GAZEBO_LIBRARIES}
-   ${NDDSHOME}/lib/${TARGET_ARCH}/libnddscz.a
-   ${NDDSHOME}/lib/${TARGET_ARCH}/libnddscorez.a
-   ${NDDSHOME}/lib/${TARGET_ARCH}/libnddscpp2z.a
-   dl
-   nsl
-   m
-   pthread
-   rt
-   fcl 
-   ccd
-)
+
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
@@ -195,103 +142,8 @@ target_link_libraries(${PROJECT_NAME}_distance
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(rti_example_pub_node
-  #src/gen/GazeboObjectStateImplPlugin.cxx
-  src/gen/GazeboObjectState.cxx
-  src/gen/GazeboObjectStatePlugin.cxx
-  #src/gen/GazeboObjectStateImpl.cxx
-  src/gen/GazeboObjectState_publisher.cxx 
-  )
-target_link_libraries(rti_example_pub_node 
-   ${catkin_LIBRARIES}
-   ${GAZEBO_LIBRARIES}
-   ${NDDSHOME}/lib/${TARGET_ARCH}/libnddscz.a
-   ${NDDSHOME}/lib/${TARGET_ARCH}//libnddscorez.a
-   ${NDDSHOME}/lib/${TARGET_ARCH}//libnddscpp2z.a
-   dl
-   nsl
-   m
-   pthread
-   rt
- )
-# Example sub
-add_executable(rti_example_sub_node
-  #src/gen/GazeboObjectStateImplPlugin.cxx
-  src/gen/GazeboObjectState.cxx
-  src/gen/GazeboObjectStatePlugin.cxx
-  #src/gen/GazeboObjectStateImpl.cxx
-  src/gen/GazeboObjectState_subscriber.cxx 
-  )
-target_link_libraries(rti_example_sub_node 
-   ${catkin_LIBRARIES}
-   ${GAZEBO_LIBRARIES}
-   ${NDDSHOME}/lib/${TARGET_ARCH}/libnddscz.a
-   ${NDDSHOME}/lib/${TARGET_ARCH}//libnddscorez.a
-   ${NDDSHOME}/lib/${TARGET_ARCH}//libnddscpp2z.a
-   dl
-   nsl
-   m
-   pthread
-   rt
- )
-# Test pub
-add_executable(rti_example_publisher
-  #src/gen/GazeboObjectStateImplPlugin.cxx
-  src/gen/GazeboObjectState.cxx
-  src/gen/GazeboObjectStatePlugin.cxx
-  #src/gen/GazeboObjectStateImpl.cxx
-  src/example_publisher.cpp
-  )
-target_link_libraries(rti_example_publisher
-   ${catkin_LIBRARIES}
-   ${GAZEBO_LIBRARIES}
-   ${NDDSHOME}/lib/${TARGET_ARCH}/libnddscz.a
-   ${NDDSHOME}/lib/${TARGET_ARCH}//libnddscorez.a
-   ${NDDSHOME}/lib/${TARGET_ARCH}//libnddscpp2z.a
-   dl
-   nsl
-   m
-   pthread
-   rt
- )
-# Test subscriber
-add_executable(rti_example_subscriber
-  #src/gen/GazeboObjectStateImplPlugin.cxx
-  src/gen/GazeboObjectState.cxx
-  src/gen/GazeboObjectStatePlugin.cxx
-  #src/gen/GazeboObjectStateImpl.cxx
-  src/example_subscriber.cpp
-  )
-target_link_libraries(rti_example_subscriber
-   ${catkin_LIBRARIES}
-   ${GAZEBO_LIBRARIES}
-   ${NDDSHOME}/lib/${TARGET_ARCH}/libnddscz.a
-   ${NDDSHOME}/lib/${TARGET_ARCH}//libnddscorez.a
-   ${NDDSHOME}/lib/${TARGET_ARCH}//libnddscpp2z.a
-   dl
-   nsl
-   m
-   pthread
-   rt
- )
-add_executable(laser_min_node 
-  #src/laser_min_filter.cpp
-  src/gen/GazeboObjectState_publisher.cxx
-  src/gen/GazeboObjectState.cxx
-  src/gen/GazeboObjectStatePlugin.cxx
-)
-target_link_libraries(laser_min_node 
-   ${catkin_LIBRARIES}
-   ${GAZEBO_LIBRARIES}
-   ${NDDSHOME}/lib/${TARGET_ARCH}/libnddscz.a
-   ${NDDSHOME}/lib/${TARGET_ARCH}//libnddscorez.a
-   ${NDDSHOME}/lib/${TARGET_ARCH}//libnddscpp2z.a
-   dl
-   nsl
-   m
-   pthread
-   rt
- )
+# add_executable(${PROJECT_NAME}_node src/rei_gazebo_distance_monitor_node.cpp)
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -303,7 +155,12 @@ target_link_libraries(laser_min_node
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-
+target_link_libraries(${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${GAZEBO_LIBRARIES}
+  pthread
+  fcl ccd
+)
 
 #############
 ## Install ##
@@ -314,16 +171,23 @@ target_link_libraries(laser_min_node
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
-# install(PROGRAMS
+# catkin_install_python(PROGRAMS
 #   scripts/my_python_script
 #   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
 
-## Mark executables and/or libraries for installation
-# install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_node
+## Mark executables for installation
+## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
+# install(TARGETS ${PROJECT_NAME}_node
+#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
+
+## Mark libraries for installation
+## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
+# install(TARGETS ${PROJECT_NAME}
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#   RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
 # )
 
 ## Mark cpp header files for installation
@@ -345,7 +209,7 @@ target_link_libraries(laser_min_node
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_gazebo_rti_state_plugin.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_rei_gazebo_distance_monitor.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
